@@ -11,7 +11,10 @@ use App\Models\Opinion;
 use App\Models\Opinion_de;
 use App\Models\Comment_en;
 use App\Models\Comment_de;
+use App\Models\Observation;
 use App\Models\Pages;
+use App\Models\Place;
+use App\Models\PlaceDetails;
 use App\Models\Tag;
 use App\Models\Tag_de;
 use App\Models\Space_tag_de;
@@ -19,15 +22,19 @@ use App\Models\Space_tag;
 use App\Models\Stat;
 use App\Models\Preference;
 use Carbon\Carbon;
+use Database\Seeders\PlaceSeeder;
 use Pestopancake\LaravelBackpackNotifications\Notifications\DatabaseNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class GlobalController extends Controller
 {
+
+    public $place_id;
     /**
      * Handle the incoming request.
      *
@@ -36,6 +43,7 @@ class GlobalController extends Controller
      */
     public function getAll()
     {
+
         if (backpack_auth()->check()) {
             $userid = backpack_auth()->user()->id;
             if (Infosperso::where('user_id', $userid)->exists()) {
@@ -46,12 +54,19 @@ class GlobalController extends Controller
                 $tagstreet = Tag::where('Category', 'Street')->get();
                 $tagbuilding = Tag::where('Category', 'Building')->get();
                 $tagopenspace = Tag::where('Category', 'Openspace')->get();
+                $allPlaces = Place::where('user_id', null)
+                    ->orWhere('user_id', backpack_auth()->user()->id)
+                    ->whereNull('parent_id')->with('subplaces')
+                    ->get();
 
-                $all_data = array_merge(
-                    $street->toArray(),
-                    $building->toArray(),
-                    $openspace->toArray()
-                );
+                $allObservations = Observation::where('user_id', null)->orWhere('user_id', backpack_auth()->user()->id)->get();
+
+
+
+                $all_data = PlaceDetails::where('user_id', backpack_auth()->user()->id)->with('place', 'observation', 'user')->get();
+
+                // dd($all_data);
+
 
                 return view(
                     'home',
@@ -61,7 +76,11 @@ class GlobalController extends Controller
                         'tagstreet',
                         'tagbuilding',
                         'tagopenspace',
-                        'userid'
+                        'userid',
+                        'allPlaces',
+                        'allObservations'
+
+
                     )
                 );
             } else {
@@ -179,8 +198,8 @@ class GlobalController extends Controller
         if ($request->type == 'street') {
             if (
                 Stat::where('street_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -201,8 +220,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'building') {
             if (
                 Stat::where('building_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -223,8 +242,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'openspace') {
             if (
                 Stat::where('openspace_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -252,8 +271,8 @@ class GlobalController extends Controller
         if ($request->type == 'street') {
             if (
                 Stat::where('street_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -274,8 +293,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'building') {
             if (
                 Stat::where('building_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -296,8 +315,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'openspace') {
             if (
                 Stat::where('openspace_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -325,8 +344,8 @@ class GlobalController extends Controller
         if ($request->type == 'street') {
             if (
                 Stat::where('street_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -347,8 +366,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'building') {
             if (
                 Stat::where('building_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -369,8 +388,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'openspace') {
             if (
                 Stat::where('openspace_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -398,8 +417,8 @@ class GlobalController extends Controller
         if ($request->type == 'street') {
             if (
                 Stat::where('street_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -420,8 +439,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'building') {
             if (
                 Stat::where('building_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -442,8 +461,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'openspace') {
             if (
                 Stat::where('openspace_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -471,8 +490,8 @@ class GlobalController extends Controller
         if ($request->type == 'street') {
             if (
                 Stat::where('street_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -493,8 +512,8 @@ class GlobalController extends Controller
         } elseif ($request->type == 'building') {
             if (
                 Stat::where('building_id', $request->id)
-                    ->where('user_id', $userid)
-                    ->doesntExist()
+                ->where('user_id', $userid)
+                ->doesntExist()
             ) {
                 $stat = new Stat();
                 $stat->user_id = $userid;
@@ -538,14 +557,15 @@ class GlobalController extends Controller
         return view('home');
     }
 
-    private function haversine($lat1, $lon1, $lat2, $lon2){
+    private function haversine($lat1, $lon1, $lat2, $lon2)
+    {
         $earthRadius = 6371000; // in meters
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         $distance = $earthRadius * $c;
-    
+
         return $distance;
     }
 
@@ -583,23 +603,23 @@ class GlobalController extends Controller
         //count how many street image are not null
         $countimage =
             Street::where('user_id', $userid)
-                ->whereNotNull('image')
-                ->count() +
+            ->whereNotNull('image')
+            ->count() +
             Street::where('user_id', $userid)
-                ->whereNotNull('image0')
-                ->count() +
+            ->whereNotNull('image0')
+            ->count() +
             Building::where('user_id', $userid)
-                ->whereNotNull('image')
-                ->count() +
+            ->whereNotNull('image')
+            ->count() +
             Building::where('user_id', $userid)
-                ->whereNotNull('image0')
-                ->count() +
+            ->whereNotNull('image0')
+            ->count() +
             Openspace::where('user_id', $userid)
-                ->whereNotNull('image')
-                ->count() +
+            ->whereNotNull('image')
+            ->count() +
             Openspace::where('user_id', $userid)
-                ->whereNotNull('image0')
-                ->count();
+            ->whereNotNull('image0')
+            ->count();
 
         if ($locale == 'de') {
             $mycomments = Comment_de::where('user_id', $userid)->get();
@@ -612,8 +632,8 @@ class GlobalController extends Controller
         $countbuilding = count($building);
         $countopenspace = count($openspace);
         $countmycomments = count($mycomments);
-        
-  
+
+
         $streets = Street::where('user_id', $userid)->get();
         $buildings = Building::where('user_id', $userid)->get();
         $openspaces = Openspace::where('user_id', $userid)->get();
@@ -626,51 +646,48 @@ class GlobalController extends Controller
             foreach ($streets as $otherStreet) {
                 if ($street->id !== $otherStreet->id) {
                     $distance = $this->haversine($street->latitude, $street->longitude, $otherStreet->latitude, $otherStreet->longitude);
-    
+
                     if ($distance > 50) {
                         $explorer = '1';
                         break;
                     }
                 }
             }
-    
         }
 
         foreach ($buildings as $building) {
 
-   
+
             foreach ($buildings as $otherStreet) {
                 if ($building->id !== $otherStreet->id) {
                     $distance = $this->haversine($building->latitude, $building->longitude, $otherStreet->latitude, $otherStreet->longitude);
-    
+
                     if ($distance > 50) {
                         $explorer = '1';
                         break;
                     }
                 }
             }
-    
         }
 
         foreach ($openspaces as $openspace) {
 
-  
+
             foreach ($openspaces as $otherStreet) {
                 if ($openspace->id !== $otherStreet->id) {
                     $distance = $this->haversine($openspace->latitude, $openspace->longitude, $otherStreet->latitude, $otherStreet->longitude);
-    
+
                     if ($distance > 50) {
                         $explorer = '1';
                         break;
                     }
                 }
             }
-    
         }
-    
 
 
- 
+
+
         if ($countall > 9) {
             $citymaker = '1';
         } else {
@@ -933,9 +950,9 @@ class GlobalController extends Controller
             $street->name = $request->name;
             $street->user_id = $userid;
             $street->type = 'Street';
-            if ($request->latitude && $request->longitude != null ){
-            $street->latitude = $request->latitude;
-            $street->longitude = $request->longitude;
+            if ($request->latitude && $request->longitude != null) {
+                $street->latitude = $request->latitude;
+                $street->longitude = $request->longitude;
             } else {
                 $street->latitude = 0;
                 $street->longitude = 0;
@@ -962,9 +979,9 @@ class GlobalController extends Controller
             $building->name = $request->name;
             $building->user_id = $userid;
             $building->type = 'Building';
-            if ($request->latitude && $request->longitude != null ){
-            $building->latitude = $request->latitude;
-            $building->longitude = $request->longitude;
+            if ($request->latitude && $request->longitude != null) {
+                $building->latitude = $request->latitude;
+                $building->longitude = $request->longitude;
             } else {
                 $building->latitude = 0;
                 $building->longitude = 0;
@@ -992,9 +1009,9 @@ class GlobalController extends Controller
             $openspace->name = $request->name;
             $openspace->user_id = $userid;
             $openspace->type = 'Openspace';
-            if ($request->latitude && $request->longitude != null ){
-            $openspace->latitude = $request->latitude;
-            $openspace->longitude = $request->longitude;
+            if ($request->latitude && $request->longitude != null) {
+                $openspace->latitude = $request->latitude;
+                $openspace->longitude = $request->longitude;
             } else {
                 $openspace->latitude = 0;
                 $openspace->longitude = 0;
@@ -1136,7 +1153,7 @@ class GlobalController extends Controller
         $openspace = Openspace::where('user_id', $userid)->get();
         $infos = Infosperso::where('user_id', $userid)->first();
         $score = backpack_auth()->user()->score;
-    
+
 
         $all_data = array_merge(
             $street->toArray(),
@@ -1152,97 +1169,98 @@ class GlobalController extends Controller
         //dd($request->all());
         $userid = backpack_auth()->user()->id;
         // dd($request->all());
-
-        if ($request->type == 'street') {
-            $street = Street::find($request->placeid);
-            if ($request->imagefirst != null) {
-                $imageName =
-                    $street->name . '.' . $request->imagefirst->extension();
-                $request->imagefirst->storeAs(
-                    'public/uploads/street/feeling/',
-                    $imageName
-                );
-                $street->image0 = '/uploads/street/feeling/' . $imageName;
-                backpack_auth()->user()->score =
-                    backpack_auth()->user()->score + 5;
+        if ($userid) {
+            if ($request->type == 'street') {
+                $street = Street::find($request->placeid);
+                if ($request->imagefirst != null) {
+                    $imageName =
+                        $street->name . '.' . $request->imagefirst->extension();
+                    $request->imagefirst->storeAs(
+                        'public/uploads/street/feeling/',
+                        $imageName
+                    );
+                    $street->image0 = '/uploads/street/feeling/' . $imageName;
+                    backpack_auth()->user()->score =
+                        backpack_auth()->user()->score + 5;
+                    backpack_auth()
+                        ->user()
+                        ->save();
+                    $street->save();
+                }
+                if ($request->description != null) {
+                    $street->description = $request->description;
+                    backpack_auth()->user()->score =
+                        backpack_auth()->user()->score + 1;
+                    backpack_auth()
+                        ->user()
+                        ->save();
+                }
+                backpack_auth()->user()->score = backpack_auth()->user()->score + 1;
                 backpack_auth()
                     ->user()
                     ->save();
                 $street->save();
-            }
-            if ($request->description != null) {
-                $street->description = $request->description;
-                backpack_auth()->user()->score =
-                    backpack_auth()->user()->score + 1;
-                backpack_auth()
-                    ->user()
-                    ->save();
-            }
-            backpack_auth()->user()->score = backpack_auth()->user()->score + 1;
-            backpack_auth()
-                ->user()
-                ->save();
-            $street->save();
-        } elseif ($request->type == 'building') {
-            $building = Building::find($request->placeid);
-            if ($request->imagefirst != null) {
-                $imageName =
-                    $building->name . '.' . $request->imagefirst->extension();
-                $request->imagefirst->storeAs(
-                    'public/uploads/building/feeling/',
-                    $imageName
-                );
-                $building->image0 = '/uploads/building/feeling/' . $imageName;
-                backpack_auth()->user()->score =
-                    backpack_auth()->user()->score + 5;
+            } elseif ($request->type == 'building') {
+                $building = Building::find($request->placeid);
+                if ($request->imagefirst != null) {
+                    $imageName =
+                        $building->name . '.' . $request->imagefirst->extension();
+                    $request->imagefirst->storeAs(
+                        'public/uploads/building/feeling/',
+                        $imageName
+                    );
+                    $building->image0 = '/uploads/building/feeling/' . $imageName;
+                    backpack_auth()->user()->score =
+                        backpack_auth()->user()->score + 5;
+                    backpack_auth()
+                        ->user()
+                        ->save();
+                    $building->save();
+                }
+                if ($request->description != null) {
+                    $building->description = $request->description;
+                    backpack_auth()->user()->score =
+                        backpack_auth()->user()->score + 1;
+                    backpack_auth()
+                        ->user()
+                        ->save();
+                }
+                backpack_auth()->user()->score = backpack_auth()->user()->score + 1;
                 backpack_auth()
                     ->user()
                     ->save();
                 $building->save();
-            }
-            if ($request->description != null) {
-                $building->description = $request->description;
-                backpack_auth()->user()->score =
-                    backpack_auth()->user()->score + 1;
-                backpack_auth()
-                    ->user()
-                    ->save();
-            }
-            backpack_auth()->user()->score = backpack_auth()->user()->score + 1;
-            backpack_auth()
-                ->user()
-                ->save();
-            $building->save();
-        } elseif ($request->type == 'openspace') {
-            $openspace = Openspace::find($request->placeid);
-            if ($request->imagefirst != null) {
-                $imageName =
-                    $openspace->name . '.' . $request->imagefirst->extension();
-                $request->imagefirst->storeAs(
-                    'public/uploads/openspace/feeling/',
-                    $imageName
-                );
-                $openspace->image0 = '/uploads/openspace/feeling/' . $imageName;
-                backpack_auth()->user()->score =
-                    backpack_auth()->user()->score + 5;
+            } elseif ($request->type == 'openspace') {
+                $openspace = Openspace::find($request->placeid);
+                if ($request->imagefirst != null) {
+                    $imageName =
+                        $openspace->name . '.' . $request->imagefirst->extension();
+                    $request->imagefirst->storeAs(
+                        'public/uploads/openspace/feeling/',
+                        $imageName
+                    );
+                    $openspace->image0 = '/uploads/openspace/feeling/' . $imageName;
+                    backpack_auth()->user()->score =
+                        backpack_auth()->user()->score + 5;
+                    backpack_auth()
+                        ->user()
+                        ->save();
+                    $openspace->save();
+                }
+                if ($request->description != null) {
+                    $openspace->description = $request->description;
+                    backpack_auth()->user()->score =
+                        backpack_auth()->user()->score + 1;
+                    backpack_auth()
+                        ->user()
+                        ->save();
+                }
+                backpack_auth()->user()->score = backpack_auth()->user()->score + 1;
                 backpack_auth()
                     ->user()
                     ->save();
                 $openspace->save();
             }
-            if ($request->description != null) {
-                $openspace->description = $request->description;
-                backpack_auth()->user()->score =
-                    backpack_auth()->user()->score + 1;
-                backpack_auth()
-                    ->user()
-                    ->save();
-            }
-            backpack_auth()->user()->score = backpack_auth()->user()->score + 1;
-            backpack_auth()
-                ->user()
-                ->save();
-            $openspace->save();
         }
 
         $placeid = $request->placeid;
@@ -3129,5 +3147,165 @@ class GlobalController extends Controller
         }
 
         return redirect()->route('dashboard');
+    }
+
+
+
+    //----------------------new code----------------------
+
+
+
+    public function addMapPlace(Request $request, $id = null)
+    {
+
+        if ($request->add_new_place == true) {
+            $newplace = Place::create([
+                'name' => $request->place_name,
+                'user_id' => backpack_user()->id,
+            ]);
+        }
+
+        $place = PlaceDetails::where('latitude', $request->latitude)
+            ->where('longitude', $request->longitude)
+            ->where('user_id', backpack_auth()->user()->id)
+            ->first();
+
+        $subPlsFnd = Place::where('id', $request->place_id)->first();
+
+        if (isset($place)) {
+            if ($place->place_id != $request->place_id) {
+                $place->update([
+                    'place_id' => $request->place_id,
+                    'place_child_id' => $request->place_child_id,
+                ]);
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Place updated successfully'
+                ]);
+            } elseif ($place->place_child_id != $request->place_child_id) {
+                $place->update([
+                    'place_child_id' => $request->place_child_id,
+                ]);
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'SubPlace updated successfully'
+                ]);
+            } elseif ($place->observation_id != $request->observation_id) {
+
+                $place->update([
+                    'observation_id' => $request->observation_id,
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Observation updated successfully'
+                ]);
+            } elseif ($place->observation_child_id != $request->observation_child_id) {
+
+                $place->update([
+                    'observation_child_id' => $request->observation_child_id,
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Observation updated successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Place alreay exist'
+                ]);
+            }
+        } else {
+
+            PlaceDetails::create([
+
+                'place_id' => $request->place_id ?? $newplace->id ?? NULL,
+                'place_child_id' => $request->place_child_id,
+                'user_id' =>  backpack_auth()->user()->id,
+                'observation_id' => $request->observation_id,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+
+            ]);
+
+            if ($request->observation_id) {
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Observation added successfully'
+                ]);
+            } elseif (isset($subPlsFnd)) {
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Place added successfully, You can also add obervation for this place!',
+                    'subPlsId' => $subPlsFnd->id
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'success',
+                    'msg' => 'Place added successfully, You can also add obervation for this place!',
+
+                ]);
+            }
+        }
+    }
+
+
+    public function addNewPlace(Request $request)
+    {
+
+        $place = Place::create([
+            'name' => $request->place_name,
+            'user_id' => backpack_user()->id,
+        ]);
+
+        PlaceDetails::create([
+            'place_id' => $place->id,
+            'user_id' =>  backpack_auth()->user()->id,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'msg' => 'Place added successfully, You also add obervation for this place!',
+
+        ]);
+    }
+
+
+    public function createNewPlace(Request $request)
+    {
+
+        $places = Place::all();
+        $observations = Observation::all();
+
+        return view('add-new-place', compact('places', 'observations'));
+    }
+
+    public function subPlace($id)
+    {
+
+        $place = Place::find($id);
+        $subplaces = Place::where('parent_id', $id)->get();
+
+
+        if ($subplaces->isNotEmpty()) {
+            return view('sub-place', compact('subplaces', 'place'));
+        } else {
+
+            return redirect('/');
+        }
+    }
+
+    public function filter()
+    {
+
+        $places = PlaceDetails::where('is_home', 1)->get();
+
+
+
+        return view('filter', compact('places'));
     }
 }

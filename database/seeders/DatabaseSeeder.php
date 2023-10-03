@@ -16,7 +16,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminUserSeeder::class,
-            GlobalSeeder::class
-         ]);
+            // GlobalSeeder::class
+            PlaceSeeder::class,
+            ObservationSeeder::class,
+            SubplaceSeeder::class
+
+        ]);
     }
 }
